@@ -1,45 +1,57 @@
-import React, { Component } from 'react';
+import React, { useState, useEffect } from 'react';
+import { connect } from 'react-redux';
 import CardList from '../components/CardList';
 import SearchBox from '../components/SearchBox';
 import Scroll from '../components/Scroll';
 import './App.css';
 
-class App extends Component {
-  constructor() {
-    super()
-    this.state = {
-      robots: [],
-      searchfield: ''
-    }
-  }
+import { setSearchField, requestRobots } from './actions';
 
-  componentDidMount() {
-    fetch('https://jsonplaceholder.typicode.com/users')
-      .then(response=> response.json())
-      .then(users => {this.setState({ robots: users})});
+const mapStateToProps = state => {
+  return {
+    searchField: state.searchRobots.searchField,
+    robots: state.requestRobots.robots,
+    isPending: state.requestRobots.isPending,
+    error: state.requestRobots.error
   }
+}
 
-  onSearchChange = (event) => {
-    this.setState({ searchfield: event.target.value })
-  }
+const mapDispatchToProps = (dispatch) => {
+  return {
+    onSearchChange: (event) => dispatch(setSearchField(event.target.value)),
+    onRequestRobots: () => dispatch(requestRobots())
+  } 
+}
 
-  render() {
-    const { robots, searchfield } = this.state;
+function App(props) {
+
+  const { searchField, onSearchChange, store, robots, isPending } = props;
+  const [count, setCount] = useState(0);
+
+  console.log(count);
+  useEffect(() => {
+    props.onRequestRobots();
+  }, [])
+
     const filteredRobots = robots.filter(robot =>{
-      return robot.name.toLowerCase().includes(searchfield.toLowerCase());
+      return robot.name.toLowerCase().includes(searchField.toLowerCase());
     })
-    return !robots.length ?
+    return isPending ?
       <h1>Loading</h1> :
       (
         <div className='tc'>
           <h1 className='f1'>RoboFriends</h1>
-          <SearchBox searchChange={this.onSearchChange}/>
+          <button onClick={() => setCount(count+1)}>Click Me!</button>
+          <SearchBox searchChange={(e) => onSearchChange(e)}/>
           <Scroll>
             <CardList robots={filteredRobots} />
           </Scroll>
         </div>
       );
   }
-}
 
-export default App;
+export default connect(mapStateToProps, mapDispatchToProps)(App);
+
+//There is two function in connect. MapStateToProps and mapDispatchToProps
+//Map State to props receives "State" as a parameter;
+//return a object(?) that will be used in our component. this object(?) takes "state.searchField";
